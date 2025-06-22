@@ -23,7 +23,11 @@ Install dependencies (recommended in a virtual environment):
 ```bash
 pip install -r requirements.txt
 ```
+The Cellpose-SAM related processes require a separate environment. Create another virtual environment and install the ependencies:
 
+```bash
+pip install -r requirements_cpsam.txt
+```
 ## Prepare Your Data
 
 ### Data Selection
@@ -97,7 +101,7 @@ Pre-trained models included:
 
 ```bash
 python run_finetune.py \
-  -m model_name/cellpose/or/v3 \
+  -m model_name/cellpose/or/v3/or/cpsam \
   -t stain/type/ss/or/he \
   -f trainset_list/my_trainset_list.txt \
   -p cyto/or/pretrained/model/path \
@@ -111,15 +115,15 @@ python run_finetune.py \
 
 | Parameter | Description |
 |:----:|:----------:|
-|  -m   | Model name: `cellpose` or `v3` |
+|  -m   | Model name: `cellpose` or `v3` or `cpsam`  |
 |  -t   | Image type: `ss` or `he` |
 |  -f   | Path to `.txt` training list     |
-|  -p   | Pretrained model path/name or scratch  |
 
 ### Optional Parameter
 
 | Parameter | Default | Description |
 |:----:|:----------:|:----------:|
+|  -p   | None |Pretrained model path/name or scratch. This parameter is not required for fine-tuning cpsam  |
 |  -r   | 0.9 |  Train/validation split ratio     |
 |  -b   | 6  |Training batch size     |
 |  -v   | 16 |Validation batch size    |
@@ -133,6 +137,14 @@ python run_finetune.py \
   -t ss \
   -f trainset_list/C05073F4_ss_trainset_list.txt \
   -p cyto \
+  -e 100
+```
+Example: Fine-tuning the Cellpose-SAM Model
+```bash
+python run_finetune.py \
+  -m cpsam \
+  -t ss \
+  -f trainset_list/C05073F4_ss_trainset_list.txt \
   -e 100
 ```
 Example: Fine-tuning the V3 Model
@@ -175,7 +187,7 @@ The input path supports both large-scale images (e.g., whole-slide images) and c
 
 ```bash
 python -m cellpose \
---dir /path/to/image/floder \
+--dir /path/to/image/floder/or/file \
 --pretrained_model /path/to/finetuned/model \
 --chan 0 \
 --save_tif \
@@ -205,6 +217,35 @@ python src/segmentor/cellpose_segmentor.py \
 -p /path/to/finetuned/model
 ```
 Similarly, the `-p` parameter also supports inputting `cyto/cyto3` to use the official pre-trained model.
+
+### Cellpose-SAM
+#### Option 1: Use the official Cellpose CLI
+
+```bash
+python -m cellpose \
+--dir /path/to/image/floder \
+--pretrained_model /path/to/finetuned/model \
+--save_tif \
+--use_gpu \
+--savedir /path/to/output/floder
+```
+Parameter Description:
+| Parameter | Description |
+|:----------:|:-------------:|
+| --dir  | Path to the  input images folder|
+| --pretrained_model | Fine-tuned model path (Or use the pre-trained cpsam model without this parameter)|
+| --save_tif | Segmentation results are saved in `.tif` format |
+| --use_gpu | Use GPU |
+| ---savedir | Output path |
+
+#### Option 2: Use the script `src/segmentor/cpsam_segmentor.py`
+
+```bash
+python src/segmentor/cpsam_segmentor.py \
+-i /path/to/image/floder/or/file  \
+-o /path/to/output/floder \
+-p /path/to/finetuned/model
+```
 
 ## Evaluation of cell segmentation results
 ### Use ImageJ
