@@ -46,32 +46,42 @@ def crop_image(image, crop_size):
                 crops.append((crop, x, y))
     return crops
 
-def process_folder(input_folder, output_folder, crop_size=(256, 256)):
+def process_file(file_path, output_folder, crop_size=(256, 256)):
+    file_name = os.path.basename(file_path)
+    image = tifffile.imread(file_path)
+    image = np.squeeze(image)
+
+    chip_id, base_x, base_y, _, _, suffix = parse_filename(file_name)
+    crops = crop_image(image, crop_size)
+
+    for crop, x, y in crops:
+        new_x = base_x + x
+        new_y = base_y + y
+        out_name = f"{chip_id}-x{new_x}_y{new_y}_w{crop_size[0]}_h{crop_size[1]}-{suffix}.tif"
+        tifffile.imwrite(os.path.join(output_folder, out_name), crop, compression='zlib')
+
+def process_input(input_path, output_folder, crop_size=(256, 256)):
     os.makedirs(output_folder, exist_ok=True)
-    files = [f for f in os.listdir(input_folder) if f.endswith('.tif')]
 
-    for file_name in tqdm(files, desc="Cropping"):
-        input_path = os.path.join(input_folder, file_name)
-        image = tifffile.imread(input_path)
-        image = np.squeeze(image)
-
-        chip_id, base_x, base_y, _, _, suffix = parse_filename(file_name)
-        crops = crop_image(image, crop_size)
-
-        for crop, x, y in crops:
-            new_x = base_x + x
-            new_y = base_y + y
-            out_name = f"{chip_id}-x{new_x}_y{new_y}_w{crop_size[0]}_h{crop_size[1]}-{suffix}.tif"
-            tifffile.imwrite(os.path.join(output_folder, out_name), crop, compression='zlib')
+    if os.path.isfile(input_path) and input_path.endswith('.tif'):
+        tqdm.write(f"Processing file: {input_path}")
+        process_file(input_path, output_folder, crop_size)
+    elif os.path.isdir(input_path):
+        files = [f for f in os.listdir(input_path) if f.endswith('.tif')]
+        for file_name in tqdm(files, desc="Cropping"):
+            input_path_file = os.path.join(input_path, file_name)
+            process_file(input_path_file, output_folder, crop_size)
+    else:
+        raise ValueError("Input is not a valid .tif file or directory.")
 
 def main():
     parser = argparse.ArgumentParser(description="Crop large chip images and masks into patches.")
-    parser.add_argument('-i', '--input_folder', required=True, help="Folder with large TIFF images or masks.")
-    parser.add_argument('-o', '--output_folder', required=True, help="Folder to save cropped patches.")
+    parser.add_argument('-i', '--input', required=True, help="Input path: a .tif file or folder containing .tif files.")
+    parser.add_argument('-o', '--output', required=True, help="Folder to save cropped patches.")
     parser.add_argument('-s', '--size', type=int, default=256, help="Patch size (default: 256)")
 
     args = parser.parse_args()
-    process_folder(args.input_folder, args.output_folder, (args.size, args.size))
+    process_input(args.input, args.output, (args.size, args.size))
 
 if __name__ == "__main__":
     main()
