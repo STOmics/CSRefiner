@@ -69,7 +69,7 @@ def train(args):
     print(f"Number of training samples: {len(tr_data)}, validation samples: {len(val_data)}")
 
     current_time = datetime.now().strftime("%b%d_%H-%M-%S")
-    model_save_path = os.path.join("finetuned_models", f"cellpose_{args.stain_type}_{current_time}")
+    model_save_path = os.path.join("finetuned_models", f"cellpose-sam_{args.stain_type}_{current_time}")
     os.makedirs(model_save_path, exist_ok=True)
 
     # Load data

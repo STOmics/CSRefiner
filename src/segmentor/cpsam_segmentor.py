@@ -39,15 +39,15 @@ def run_cpsam(model_path, input_path, output_dir, batch_size=8, use_gpu=False):
 
 def main():
     parser = argparse.ArgumentParser(description='Cellpose-SAM fine-tuned model inference')
-    parser.add_argument('--model_path', type=str, required=True,
+    parser.add_argument('-p', '--model_path', type=str, required=True,
                         help='Path to the fine-tuned model (e.g., /path/to/finetuned_model)')
-    parser.add_argument('--input', type=str, required=True,
+    parser.add_argument('-i', '--input', type=str, required=True,
                         help='Path to a single image file or a directory containing images')
-    parser.add_argument('--output_dir', type=str, required=True,
+    parser.add_argument('-o', '--output_dir', type=str, required=True,
                         help='Directory to save output masks')
-    parser.add_argument('--batch_size', type=int, default=8,
+    parser.add_argument('-b', '--batch_size', type=int, default=8,
                         help='Batch size (default: 8)')
-    parser.add_argument('--use_gpu', action='store_true',
+    parser.add_argument('-g', '--use_gpu', action='store_true',
                         help='Use GPU if available')
     args = parser.parse_args()
 

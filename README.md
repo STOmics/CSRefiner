@@ -23,10 +23,10 @@ Install dependencies (recommended in a virtual environment):
 ```bash
 pip install -r requirements.txt
 ```
-The Cellpose-SAM related processes require a separate environment. Create another virtual environment and install the ependencies:
+The Cellpose-SAM related processes require a separate environment. Create another virtual environment and install the dependencies:
 
 ```bash
-pip install -r requirements_cpsam.txt
+conda env create -f environment_cellpose.yml
 ```
 ## Prepare Your Data
 
@@ -244,7 +244,8 @@ Parameter Description:
 python src/segmentor/cpsam_segmentor.py \
 -i /path/to/image/floder/or/file  \
 -o /path/to/output/floder \
--p /path/to/finetuned/model
+-p /path/to/finetuned/model \
+-g
 ```
 
 ## Evaluation of cell segmentation results
