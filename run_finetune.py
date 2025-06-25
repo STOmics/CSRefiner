@@ -1,13 +1,30 @@
 import argparse
 import importlib
+import importlib.util
+from pathlib import Path
 import logging
+import sys
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def main():
+def load_model_module(model_name: str):
+    module_path = Path(__file__).parent / "models" / f"{model_name}_finetune.py"
+    
+    if not module_path.exists():
+        available = [f.stem.replace('_finetune', '') 
+                     for f in (module_path.parent).glob('*_finetune.py')]
+        raise FileNotFoundError(
+            f"Model file '{module_path}' not found.\nAvailable models: {available}"
+        )
 
+    spec = importlib.util.spec_from_file_location(f"models.{model_name}_finetune", str(module_path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+def main():
     parser = argparse.ArgumentParser(description="Run fine-tuning script based on the -m parameter.")
-    parser.add_argument('-m', '--model', required=True, choices=['v3', 'cellpose', 'cpsam'], help="Model name to finetune (e.g., v3, cellpose, cpsam)")
+    parser.add_argument('-m', '--model', required=True, choices=['v3', 'cellpose', 'cpsam'], help="Model name to finetune")
     parser.add_argument('-t', '--stain_type', choices=['ss', 'he'], required=True, help="Image type: ss or he")
     parser.add_argument('-f', '--txt_file', required=True, help="Path to training list (.txt)")
     parser.add_argument('-p', '--pretrained_model', help="Path to pretrained model (.hdf5), or 'scratch'")
@@ -17,21 +34,18 @@ def main():
     parser.add_argument('-e', '--nb_epoch', type=int, default=500, help="Number of training epochs")
     
     args = parser.parse_args()
-    
+
+    logging.info(f"Loading model module for: {args.model}")
     try:
-        module_name = f"models.{args.model}_finetune"
-        logging.info(f"Loading module: {module_name}")
-        
-        model_module = importlib.import_module(module_name)
-        
-        if hasattr(model_module, "train"):
-            logging.info(f"Starting training with module: {module_name}")
-            model_module.train(args)
+        module = load_model_module(args.model)
+        if hasattr(module, "train"):
+            logging.info("Starting training...")
+            module.train(args)
         else:
-            logging.error(f"Module '{module_name}.py' does not have a 'train' function.")
-    
-    except ModuleNotFoundError:
-        logging.error(f"Finetune script '{module_name}.py' not found in the 'models' folder.")
+            logging.error(f"No 'train' function found in module for model '{args.model}'.")
+    except Exception as e:
+        logging.error(f"Failed to load or execute module: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
