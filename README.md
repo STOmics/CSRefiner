@@ -26,7 +26,7 @@ pip install -r requirements.txt
 The Cellpose-SAM related processes require a separate environment. Create another virtual environment and install the dependencies:
 
 ```bash
-conda env create -f environment_cellpose.yml
+conda env create -f environment_cpsam.yml
 ```
 ## Prepare Your Data
 
