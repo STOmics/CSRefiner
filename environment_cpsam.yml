@@ -6,6 +6,7 @@ dependencies:
     - qtpy
 #    - PyQt5.sip
     - numpy>=1.20.0
+    - matplotlib
     - scipy
     - torch==2.0.1
     - opencv-python-headless
