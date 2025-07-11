@@ -16,7 +16,7 @@ dependencies:
     - tqdm
     - tifffile
     - fastremap
-    - cellpose
+    - cellpose==4.0.4
     - roifile
     - pyqt5
     - dask
