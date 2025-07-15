@@ -249,10 +249,10 @@ def main(args, para):
         cse = CellSegEval(m)
         v = cse.evaluation(gt_path=gt_path, dt_path=dt_path)
         dataset_dct[m] = v
-        if os.path.exists(args.output_path):
-            cse.dump_info(args.output_path)
-        else:
-            models_logger.warn('Output path not exists, will not dump result')
+        
+        os.makedirs(args.output_path, exist_ok=True)
+        cse.dump_info(args.output_path)
+        models_logger.info(f"Dumping results to: {args.output_path}")
 
     dct[dataset_name] = dataset_dct
 
