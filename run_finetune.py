@@ -24,10 +24,10 @@ def load_model_module(model_name: str):
 
 def main():
     parser = argparse.ArgumentParser(description="Run fine-tuning script based on the -m parameter.")
-    parser.add_argument('-m', '--model', required=True, choices=['v3', 'cellpose', 'cpsam'], help="Model name to finetune")
+    parser.add_argument('-m', '--model', required=True, choices=['v3', 'cellpose', 'cpsam', 'stardist'], help="Model name to finetune")
     parser.add_argument('-t', '--stain_type', choices=['ss', 'he'], required=True, help="Image type: ss or he")
     parser.add_argument('-f', '--txt_file', required=True, help="Path to training list (.txt)")
-    parser.add_argument('-p', '--pretrained_model', help="Path to pretrained model (.hdf5), or 'scratch'")
+    parser.add_argument('-p', '--pretrained_model', help="Path to pretrained model, or 'scratch'")
     parser.add_argument('-r', '--ratio', type=float, default=0.9, help="Train/validation split ratio")
     parser.add_argument('-b', '--batch_size', type=int, default=6, help="Training batch size")
     parser.add_argument('-v', '--val_batchsize', type=int, default=16, help="Validation batch size")

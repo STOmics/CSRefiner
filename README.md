@@ -1,11 +1,12 @@
 # CSRefiner
 
-A lightweight framework for fine-tuning cell segmentation models with small datasets, optimized for spatial transcriptomics (CellBin). Efficiently adapt pre-trained models to new tissue types or staining conditions using minimal annotations. Achieve higher accuracy in cell boundary detection with just a few training samples. Supporting:
+A lightweight framework for fine-tuning cell segmentation models with small datasets, optimized for spatial transcriptomics. Efficiently adapt pre-trained models to new tissue types or staining conditions using minimal annotations. Only a small number of training samples are needed to achieve higher cell boundary detection accuracy, thereby obtaining a more accurate cellbin matrix. Supporting:
 
 - **Cellpose**
-- **CellBin v3**
+- **Stardist**
+- **CellBin**
 
-Supports multiple image types (e.g., HE, SS), with options for training from scratch or using pretrained models.
+Supports multiple image types (e.g., HE, ssDNA, DAPI, mIF), with options for training from scratch or using pretrained models.
 
 The project pipeline is as follow:
 
@@ -23,7 +24,7 @@ Install dependencies (recommended in a virtual environment):
 ```bash
 pip install -r requirements.txt
 ```
-The Cellpose-SAM related processes require a separate environment. Create another virtual environment and install the dependencies:
+The Cellpose-SAM(cpsam) related processes require a separate environment. Create another virtual environment and install the dependencies:
 
 ```bash
 conda env create -f environment_cpsam.yml
@@ -58,7 +59,7 @@ If your data is not annotated, here is a [tutorial](./docs/Tutorial%20on%20Cell%
 
 Images and masks format should be `.tif`.
 
-Masks format for `Cellpose` can only be `instance mask`.
+Masks format for `Cellpose` and `Stardist` can only be `instance mask(each cell has a unique integer label)`.
 
 If necessary, use `tools/mask_convert.py` to convert mask formats:
 
@@ -87,7 +88,22 @@ This txt file will be used as a necessary parameter input for subsequent fine-tu
 
 ## Start Fine-Tuning
 
-Download link for the v3 pre-trained models: https://bgipan.genomics.cn/#/link/2AZUv6JJfC4KqL74Rrn0
+### Pre-trained models:
+### Cellpose
+Cellpose has the following official pre-trained models:
+
+`cpsam`, `cyto3`, `nuclei`, `cyto2_cp3`, `tissuenet_cp3`, `livecell_cp3`, `yeast_PhC_cp3`, `yeast_BF_cp3`, `bact_phase_cp3`, `bact_fluor_cp3`, `deepbacs_cp3`, `cyto2`, `cyto`, `CPx`, `transformer_cp3`, `neurips_cellpose_default`, `neurips_cellpose_transformer`, `neurips_grayscale_cyto2`, `CP`, `CPx`, `TN1`, `TN2`, `TN3`, `LC1`, `LC2`, `LC3`, `LC4`.
+
+It is recommended to use `cpsam`, `cyto3`, `cyto2`, `cyto`, which are the core models of Cellpose.
+
+### Stardist
+| key | Modality (Staining) | Image format | Description  |
+| :-- | :-: | :-:| :-- |
+| `2D_versatile_fluo` `2D_paper_dsb2018` `2D_demo`| Fluorescence (nuclear marker) | 2D single channel| *Versatile (fluorescent nuclei)* and *DSB 2018 (from StarDist 2D paper)* that were both trained on a [subset of the DSB 2018 nuclei segmentation challenge dataset](https://github.com/stardist/stardist/releases/download/0.1.0/dsb2018.zip). 2D_demo is a pre-trained model provided by StarDist for quick testing and demonstration of StarDist's basic features.|
+|`2D_versatile_he` | Brightfield (H&E) | 2D RGB    | *Versatile (H&E nuclei)* that was trained on images from the [MoNuSeg 2018 training data](https://monuseg.grand-challenge.org/Data/) and the [TNBC dataset from Naylor et al. (2018)](https://zenodo.org/record/1175282#.X6mwG9so-CN). |
+
+### Cellbin
+Download link for the Cellbin(referred to as `"v3"` in all script descriptions below) pre-trained models: https://bgipan.genomics.cn/#/link/2AZUv6JJfC4KqL74Rrn0
 
 Password: 8eGM
 
@@ -101,10 +117,10 @@ Pre-trained models included:
 
 ```bash
 python run_finetune.py \
-  -m model_name/cellpose/or/v3/or/cpsam \
+  -m model_name \
   -t stain/type/ss/or/he \
   -f trainset_list/my_trainset_list.txt \
-  -p cyto/or/pretrained/model/path \
+  -p pretrained/model/name/or/path \
   -r 0.9 \
   -b 8 \
   -v 16 \
@@ -115,7 +131,7 @@ python run_finetune.py \
 
 | Parameter | Description |
 |:----:|:----------:|
-|  -m   | Model name: `cellpose` or `v3` or `cpsam`  |
+|  -m   | Model name: `cellpose` or `v3` or `cpsam` or `stardist`  |
 |  -t   | Image type: `ss` or `he` |
 |  -f   | Path to `.txt` training list     |
 
@@ -127,7 +143,7 @@ python run_finetune.py \
 |  -r   | 0.9 |  Train/validation split ratio     |
 |  -b   | 6  |Training batch size     |
 |  -v   | 16 |Validation batch size    |
-|  -e   | 500 | Number of training epochs. For the v3 model, due to its early stopping mechanism, it is the maximum number of training rounds. For the Cellpose model without early stopping, Cellpose officially recommends training for 100 epochs, and it may help to use more epochs, especially when you have more training data.     |
+|  -e   | 500 | Number of training epochs. For the `v3` and `stardist` model, due to its early stopping mechanism, it is the maximum number of training rounds. For the Cellpose model without early stopping, Cellpose officially recommends training for 100 epochs, and it may help to use more epochs, especially when you have more training data.     |
 
 Example: Fine-tuning the Cellpose Model
 
@@ -135,7 +151,7 @@ Example: Fine-tuning the Cellpose Model
 python run_finetune.py \
   -m cellpose \
   -t ss \
-  -f trainset_list/C05073F4_ss_trainset_list.txt \
+  -f trainset_list/my_trainset_list.txt \
   -p cyto \
   -e 100
 ```
@@ -144,16 +160,27 @@ Example: Fine-tuning the Cellpose-SAM Model
 python run_finetune.py \
   -m cpsam \
   -t ss \
-  -f trainset_list/C05073F4_ss_trainset_list.txt \
+  -f trainset_list/my_trainset_list.txt \
   -e 100
 ```
+
+Example: Fine-tuning the Stardist Model
+```bash
+python run_finetune.py \
+  -m stardist \
+  -t ss \
+  -f trainset_list/my_trainset_list.txt \
+  -p 2D_versatile_fluo \
+  -e 100
+``` 
+
 Example: Fine-tuning the V3 Model
 
 ```bash
 python run_finetune.py \
   -m v3 \
   -t ss \
-  -f trainset_list/C05073F4_ss_trainset_list.txt \
+  -f trainset_list/my_trainset_list.txt \
   -p weights/cellseg_bcdu_SHDI_221008_tf.hdf5 \
   -e 500
 ```
@@ -169,17 +196,6 @@ After training, outputs are saved to `finetuned_models/model_timestamp/`:
 `loss_curve.png`: Training/validation loss plot
 
 ## Cell Segmentation Using Fine-Tuned Models
-
-### v3
-
-```bash
-python src/segmentor/v3_segmentor.py \
--i input/img/path \
--o /path/to/output/floder \
--p /path/to/model \
--g gpu_index 
-```
-The input path supports both large-scale images (e.g., whole-slide images) and cropped tiles, as well as batch processing via file or folder paths.
 
 ### Cellpose
 
@@ -204,7 +220,7 @@ Parameter Description:
 | --use_gpu | Use GPU |
 | ---savedir | Output path |
 
-For more parameters, see: [Cellpose CLI — cellpose 3.1.1.1-24-g3864748 documentation,](https://cellpose.readthedocs.io/en/latest/cli.html) which can be selected according to actual needs.
+For more parameters, see: [Cellpose CLI — cellpose documentation,](https://cellpose.readthedocs.io/en/latest/cli.html) which can be selected according to actual needs.
 
 #### Option 2: Use the script `/src/segmentor/cellpose_segmentor.py`
 
@@ -247,6 +263,26 @@ python src/segmentor/cpsam_segmentor.py \
 -p /path/to/finetuned/model \
 -g
 ```
+
+### Stardist
+
+```bash
+python src/segmentor/stardist_segmentor.py \
+-i input/img/path \
+-o /path/to/output/floder \
+-p /path/to/model 
+```
+
+### v3
+
+```bash
+python src/segmentor/v3_segmentor.py \
+-i input/img/path \
+-o /path/to/output/floder \
+-p /path/to/model \
+-g gpu_index 
+```
+The input path supports both large-scale images (e.g., whole-slide images) and cropped tiles, as well as batch processing via file or folder paths.
 
 ## Evaluation of cell segmentation results
 ### Use ImageJ
