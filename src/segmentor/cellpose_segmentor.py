@@ -6,7 +6,7 @@ import sys
 import copy
 import cv2
 import os
-from cellpose import models
+from cellpose import models, io
 import numpy as np
 from math import ceil
 import patchify
@@ -114,15 +114,6 @@ def poolingOverlap(mat, ksize, stride=None, method='max', pad=False):
     result = np.nan_to_num(result)
     return result
 
-
-def f_instance2semantics_max(ins):
-    ins_m = poolingOverlap(ins, ksize=(2, 2), stride=(1, 1), pad=True, method='mean')
-    mask = np.uint8(np.subtract(np.float64(ins), ins_m))
-    ins[mask != 0] = 0
-    ins = f_instance2semantics(ins)
-    return ins
-
-
 def cellseg(file_lst, save_path, model_path):
     '''
     Cell segmentation function.
@@ -146,42 +137,56 @@ def cellseg(file_lst, save_path, model_path):
         try:
             name = os.path.split(file)[-1]
             print(f"Processing file: {file}")
-            img = tifffile.imread(file, key=0)
-            img = f_ij_16_to_8(img, chunk_size=1000000)
-            img = f_rgb2gray(img, True)
+            img = io.imread(file)
+            # img = f_ij_16_to_8(img, chunk_size=1000000)
+            # img = f_rgb2gray(img, True)
 
-            res_image = np.pad(img, ((act_step, act_step), (act_step, act_step)), 'constant')
-            res_a = res_image.shape[0]
-            res_b = res_image.shape[1]
-            re_length = ceil((res_a - (photo_size - photo_step)) / photo_step) * photo_step + (
-                    photo_size - photo_step)
-            re_width = ceil((res_b - (photo_size - photo_step)) / photo_step) * photo_step + (
-                    photo_size - photo_step)
-            regray_image = np.pad(res_image, ((0, re_length - res_a), (0, re_width - res_b)), 'constant')
-            patches = patchify.patchify(regray_image, (photo_size, photo_size), step=photo_step)
-            wid = patches.shape[0]
-            high = patches.shape[1]
-            a_patches = np.full((wid, high, (photo_size - overlap), (photo_size - overlap)), 255, dtype=np.uint8)
+            if img.shape[0] < photo_size or img.shape[1] < photo_size:
+                print(f"Image size smaller than {photo_size}, processing directly...")
+                diameter = model.diam_labels if diameter == 0 else diameter
+                masks, flows, styles = model.eval(img,
+                                                diameter=diameter,
+                                                flow_threshold=flow_threshold,
+                                                cellprob_threshold=cellprob_threshold,
+                                                channels=[0, 0])
+                masks = f_instance2semantics(masks)
+                masks[masks > 0] = 255
+                cropped_1 = np.uint8(masks)
+            
+            else:
+                res_image = np.pad(img, ((act_step, act_step), (act_step, act_step)), 'constant')
+                res_a = res_image.shape[0]
+                res_b = res_image.shape[1]
+                re_length = ceil((res_a - (photo_size - photo_step)) / photo_step) * photo_step + (
+                        photo_size - photo_step)
+                re_width = ceil((res_b - (photo_size - photo_step)) / photo_step) * photo_step + (
+                        photo_size - photo_step)
+                regray_image = np.pad(res_image, ((0, re_length - res_a), (0, re_width - res_b)), 'constant')
+                patches = patchify.patchify(regray_image, (photo_size, photo_size), step=photo_step)
+                wid = patches.shape[0]
+                high = patches.shape[1]
+                a_patches = np.full((wid, high, (photo_size - overlap), (photo_size - overlap)), 255, dtype=np.uint8)
 
-            for i in tqdm.tqdm(range(wid)):
-                for j in range(high):
-                    img_data = patches[i, j, :, :]
-                    diameter = model.diam_labels if diameter == 0 else diameter
-                    masks, flows, styles = model.eval(img_data,
-                                                      diameter=diameter,
-                                                      flow_threshold=flow_threshold,
-                                                      cellprob_threshold=cellprob_threshold, channels=[0, 0])
-                    masks = f_instance2semantics_max(masks)
-                    a_patches[i, j, :, :] = masks[act_step:(photo_size - act_step),
-                                            act_step:(photo_size - act_step)]
+                for i in tqdm.tqdm(range(wid)):
+                    for j in range(high):
+                        img_data = patches[i, j, :, :]
+                        diameter = model.diam_labels if diameter == 0 else diameter
+                        masks, flows, styles = model.eval(img_data,
+                                                        diameter=diameter,
+                                                        flow_threshold=flow_threshold,
+                                                        cellprob_threshold=cellprob_threshold, channels=[0, 0])
+                        masks = f_instance2semantics(masks)
+                        masks[masks > 0] = 255
+                        a_patches[i, j, :, :] = masks[act_step:(photo_size - act_step),
+                                                act_step:(photo_size - act_step)]
 
-            patch_nor = patchify.unpatchify(a_patches,
-                                            ((wid) * (photo_size - overlap), (high) * (photo_size - overlap)))
-            nor_imgdata = np.array(patch_nor)
-            after_wid = patch_nor.shape[0]
-            after_high = patch_nor.shape[1]
-            cropped_1 = nor_imgdata[0:(after_wid - (re_length - res_a)), 0:(after_high - (re_width - res_b))]
-            cropped_1 = np.uint8(remove_small_objects(cropped_1 > 0, min_size=2))
+                patch_nor = patchify.unpatchify(a_patches,
+                                                ((wid) * (photo_size - overlap), (high) * (photo_size - overlap)))
+                nor_imgdata = np.array(patch_nor)
+                after_wid = patch_nor.shape[0]
+                after_high = patch_nor.shape[1]
+                cropped_1 = nor_imgdata[0:(after_wid - (re_length - res_a)), 0:(after_high - (re_width - res_b))]
+                cropped_1 = np.uint8(remove_small_objects(cropped_1 > 0, min_size=2))
 
             save_name, _ = os.path.splitext(name)
             save_name = f"{save_name}_cp_mask.tif"
