@@ -4,6 +4,7 @@ from stardist.models import StarDist2D
 from csbdeep.utils import normalize
 from skimage.io import imread, imsave
 import glob
+import tifffile
 from tqdm import tqdm
 
 # Supported official model names
@@ -25,7 +26,7 @@ def process_image(model, input_path, output_path):
     img_norm = normalize(img, 1, 99.8)
     labels, details = model.predict_instances(img_norm)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-    imsave(output_path, labels.astype('uint16'))
+    tifffile.imwrite(output_path, labels.astype('uint16'), compression='zlib')
     print(f"Segmentation result saved to: {output_path}")
 
 def generate_output_name(input_path):
