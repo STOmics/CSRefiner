@@ -37,12 +37,12 @@ def generate_output_name(input_path):
 
 def main():
     parser = argparse.ArgumentParser(description="StarDist cell segmentation inference script (supports official and fine-tuned models)")
-    parser.add_argument('-m', '--model', required=True, help="Model name (official model like 2D_versatile_fluo, or local .h5 weights file path)")
+    parser.add_argument('-p', "--model_path", required=True, help="Model name (official model like 2D_versatile_fluo, or local .h5 weights file path)")
     parser.add_argument('-i', '--input', required=True, help="Input image path or folder")
     parser.add_argument('-o', '--output', required=True, help="Output image path (if input is image) or output folder (if input is folder)")
     args = parser.parse_args()
 
-    model = load_model(args.model)
+    model = load_model(args.model_path)
 
     if os.path.isdir(args.input):
         # Batch mode: process all images in folder
