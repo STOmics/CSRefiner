@@ -121,6 +121,12 @@ class DataGenerator(Sequence):
 
         for i in range(len(batch_x)):
             img = tifffile.imread(batch_x[i])
+            
+            if img.dtype == np.uint16:
+                img = (img / 256).astype(np.uint8) 
+            elif img.dtype != np.uint8:
+                img = img.astype(np.uint8)
+
             mask = tifffile.imread(batch_y[i])
             mask = np.clip(mask, 0, 1)
             img = self.pre_fn(img)
