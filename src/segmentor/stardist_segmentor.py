@@ -15,9 +15,17 @@ def load_model(model_path):
         print(f"Loading official model: {model_path}")
         model = StarDist2D.from_pretrained(model_path)
     else:
+        lower_name = os.path.basename(model_path).lower()
+        if "he" in lower_name:
+            base_model = "2D_versatile_he"
+        elif "fluo" in lower_name:
+            base_model = "2D_versatile_fluo"
+        else:
+            base_model = "2D_versatile_he"
+        
         print(f"Loading local model weights: {model_path}")
-        # Initialize with any official model, then load weights
-        model = StarDist2D.from_pretrained('2D_versatile_fluo')
+        print(f"Initializing with base model: {base_model}")
+        model = StarDist2D.from_pretrained(base_model)
         model.keras_model.load_weights(model_path)
     return model
 
