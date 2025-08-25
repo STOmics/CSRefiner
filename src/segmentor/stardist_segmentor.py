@@ -1,6 +1,6 @@
 import argparse
 import os
-from stardist.models import StarDist2D
+from stardist.models import StarDist2D, Config2D
 from csbdeep.utils import normalize
 from skimage.io import imread, imsave
 import glob
@@ -11,17 +11,23 @@ from tqdm import tqdm
 OFFICIAL_MODELS = ['2D_versatile_fluo', '2D_versatile_he', '2D_paper_dsb2018', '2D_demo']
 
 def load_model(model_path):
+    lower_name = os.path.basename(model_path).lower()
+
     if model_path in OFFICIAL_MODELS:
         print(f"Loading official model: {model_path}")
         model = StarDist2D.from_pretrained(model_path)
+    elif "scratch" in lower_name:
+        basedir = os.path.dirname(model_path)
+        config =  Config2D(n_channel_in = 3 if "he" in model_path else 1)
+        model = StarDist2D(config, name = 'scratch', basedir = basedir)
+        model.keras_model.load_weights(model_path)
     else:
-        lower_name = os.path.basename(model_path).lower()
         if "he" in lower_name:
             base_model = "2D_versatile_he"
         elif "fluo" in lower_name:
             base_model = "2D_versatile_fluo"
         else:
-            base_model = "2D_versatile_he"
+            base_model = "2D_versatile_fluo"
         
         print(f"Loading local model weights: {model_path}")
         print(f"Initializing with base model: {base_model}")

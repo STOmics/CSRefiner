@@ -157,9 +157,9 @@ def train(args):
         # Save model
         if args.pretrained_model.lower() == 'scratch':
             if args.stain_type == 'ss':
-                model_source = '2D_versatile_fluo'
+                model_source = 'scratch_fluo'
             elif args.stain_type == 'he':
-                model_source = '2D_versatile_he'
+                model_source = 'scratch_he'
             else:
                 logging.warning(f"Unknown stain_type '{args.stain_type}' for scratch training. Using 'scratch' as source.")
                 model_source = 'scratch_{args.stain_type}' 
