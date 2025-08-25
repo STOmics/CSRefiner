@@ -50,6 +50,17 @@ If filename contains coordinates like `chipA-x512_y512_w256_h256-img.tif,` cropp
 
 Output format: `chip_id-xX_yY_wW_hH-img/mask.tif`, useful for traceability.
 
+❗Note: StarDist's H&E-stained segmentation model, `'2D_versatile_he'`, requires an input image size of `512×512` pixels, which differs from the size requirements of other models. If you prefer not to perform additional data preparation, you can use the script `tools/pad_image.py` to pad the image to the required size.
+
+```bash
+python tools/pad_image.py \
+  -i path/to/images \
+  -o path/to/masks \
+  -io path/to/padded/images \
+  -go path/to/padded/masks \
+  -ts target_height target_width
+```
+
 ### Data Annotation
 
 If your data is not annotated, here is a [tutorial](./docs/Tutorial%20on%20Cell%20Annotation%20Using%20Qupath.md) for manual cell annotation using Qupath.
