@@ -328,3 +328,8 @@ Parameter Description:
 | -i  | Original gene expression matrix (`.gem.gz`/`.gef` format) path |
 | -o | Save path of cellbin matrix combined with cell position information|
 | -m | Model segmentation result mask file path|
+
+## Citation
+```
+Shi, Can, et al. "CSRefiner: A lightweight framework for fine-tuning cell segmentation models with small datasets." bioRxiv (2025): 2025-09.
+```
